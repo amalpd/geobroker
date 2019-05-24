@@ -1,9 +1,12 @@
 package de.hasenburg.geobroker.commons.model.message.payloads;
 
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import de.hasenburg.geobroker.commons.Utility;
 import de.hasenburg.geobroker.commons.exceptions.CommunicatorException;
 import de.hasenburg.geobroker.commons.model.JSONable;
 import de.hasenburg.geobroker.commons.model.message.ControlPacketType;
+import de.hasenburg.geobroker.commons.model.message.KryoSerializer;
 import de.hasenburg.geobroker.commons.model.message.Topic;
 import de.hasenburg.geobroker.commons.model.spatial.Geofence;
 import de.hasenburg.geobroker.commons.model.spatial.Location;
@@ -88,4 +91,16 @@ public class PayloadTest {
 		logger.info("FINISHED TEST");
 	}
 
+	@Test
+	public void testSUBSCRIBEPayload() throws CommunicatorException{
+		SUBSCRIBEPayload payload = new SUBSCRIBEPayload(new Topic("data"), Geofence.circle(Location.random(), 1));
+		KryoSerializer kryo = new KryoSerializer();
+		Output out = new Output(1024, -1);
+		kryo.write(out, payload);
+		ZMsg msg = ZMsg.newStringMsg().addLast(out.toBytes());
+
+		Input inp = new Input(msg.pop().getData());
+		AbstractPayload payload2 = Utility.buildPayloadFromKryo(inp, ControlPacketType.SUBSCRIBE, kryo);
+		assertEquals(payload, payload2.getSUBSCRIBEPayload().get());
+	}
 }
