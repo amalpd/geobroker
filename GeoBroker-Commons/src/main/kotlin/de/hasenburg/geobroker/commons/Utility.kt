@@ -2,9 +2,12 @@
 
 package de.hasenburg.geobroker.commons
 
+import com.esotericsoftware.kryo.io.Input
 import de.hasenburg.geobroker.commons.exceptions.CommunicatorException
 import de.hasenburg.geobroker.commons.model.JSONable
+import de.hasenburg.geobroker.commons.model.KryoInterface
 import de.hasenburg.geobroker.commons.model.message.ControlPacketType
+import de.hasenburg.geobroker.commons.model.message.KryoSerializer
 import de.hasenburg.geobroker.commons.model.message.payloads.*
 import me.atrox.haikunator.Haikunator
 import org.apache.logging.log4j.Level
@@ -212,6 +215,112 @@ fun buildPayloadFromString(s: String, controlPacketType: ControlPacketType): Abs
         ControlPacketType.BrokerForwardUnsubscribe -> {
             val brokerForwardUnsubscribePayload = JSONable.fromJSON<BrokerForwardUnsubscribePayload>(s,
                     BrokerForwardUnsubscribePayload::class.java).orElseGet { BrokerForwardUnsubscribePayload() }
+            if (!brokerForwardUnsubscribePayload.nullField()) {
+                return brokerForwardUnsubscribePayload
+            }
+        }
+        else -> throw CommunicatorException("ControlPacketType ${controlPacketType.name} is not supported")
+    }
+
+    throw CommunicatorException("Some of the payloads fields that may not be null are null")
+}
+
+@Throws(CommunicatorException::class)
+fun buildPayloadFromKryo(input: Input, controlPacketType: ControlPacketType, kryo: KryoSerializer): AbstractPayload {
+
+    when (controlPacketType) {
+        ControlPacketType.CONNACK -> {
+            val connackPayload = (KryoInterface.readCONNACK(kryo, input))
+            if (!connackPayload.nullField()) {
+                return connackPayload
+            }
+        }
+        ControlPacketType.CONNECT -> {
+            val connectPayload = (KryoInterface.readCONNECT(kryo, input))
+            if (!connectPayload.nullField()) {
+                return connectPayload
+            }
+        }
+        ControlPacketType.DISCONNECT -> {
+            val disconnectPayload = (KryoInterface.readDISCONNECT(kryo, input))
+            if (!disconnectPayload.nullField()) {
+                return disconnectPayload
+            }
+        }
+        ControlPacketType.PINGREQ -> {
+            val pingreqPayload = (KryoInterface.readPINGREQ(kryo, input))
+            if (!pingreqPayload.nullField()) {
+                return pingreqPayload
+            }
+        }
+        ControlPacketType.PINGRESP -> {
+            val pingrespPayload = (KryoInterface.readPINGRESP(kryo, input))
+            if (!pingrespPayload.nullField()) {
+                return pingrespPayload
+            }
+        }
+        ControlPacketType.PUBACK -> {
+            val pubackPayload = (KryoInterface.readPUBACK(kryo, input))
+            if (!pubackPayload.nullField()) {
+                return pubackPayload
+            }
+        }
+        ControlPacketType.PUBLISH -> {
+            val publishPayload = (KryoInterface.readPUBLISH(kryo, input))
+            if (!publishPayload.nullField()) {
+                return publishPayload
+            }
+        }
+        ControlPacketType.SUBACK -> {
+            val subackPayload = (KryoInterface.readSUBACK(kryo, input))
+            if (!subackPayload.nullField()) {
+                return subackPayload
+            }
+        }
+        ControlPacketType.SUBSCRIBE -> {
+            val subscribePayload = (KryoInterface.readSUBSCRIBE(kryo, input))
+            if (!subscribePayload.nullField()) {
+                return subscribePayload
+            }
+        }
+        ControlPacketType.UNSUBSCRIBE -> {
+            val unsubscribePayload = (KryoInterface.readUNSUBSCRIBE(kryo, input))
+            if (!unsubscribePayload.nullField()) {
+                return unsubscribePayload
+            }
+        }
+        ControlPacketType.UNSUBACK -> {
+            val unsubackPayload = (KryoInterface.readUNSUBACK(kryo, input))
+            if (!unsubackPayload.nullField()) {
+                return unsubackPayload
+            }
+        }
+        ControlPacketType.BrokerForwardDisconnect -> {
+            val brokerForwardDisconnectPayload = (KryoInterface.readBrokerForwardDisconnect(kryo, input))
+            if (!brokerForwardDisconnectPayload.nullField()) {
+                return brokerForwardDisconnectPayload
+            }
+        }
+        ControlPacketType.BrokerForwardPingreq -> {
+            val brokerForwardPublishPingreq = (KryoInterface.readBrokerForwardPingreq(kryo, input))
+            if (!brokerForwardPublishPingreq.nullField()) {
+                return brokerForwardPublishPingreq
+            }
+        }
+        ControlPacketType.BrokerForwardPublish -> {
+            val brokerForwardPublishPayload = (KryoInterface.readBrokerForwardPublish(kryo, input))
+            if (!brokerForwardPublishPayload.nullField()) {
+                return brokerForwardPublishPayload
+            }
+        }
+        ControlPacketType.BrokerForwardSubscribe -> {
+            val brokerForwardSubscribePayload = (KryoInterface.readBrokerForwardSubscribe(kryo, input))
+            if (!brokerForwardSubscribePayload.nullField()) {
+                return brokerForwardSubscribePayload
+            }
+        }
+        ControlPacketType.BrokerForwardUnsubscribe -> {
+            val brokerForwardUnsubscribePayload = (KryoInterface.readBrokerForwardUnsubscribe(kryo, input))
             if (!brokerForwardUnsubscribePayload.nullField()) {
                 return brokerForwardUnsubscribePayload
             }

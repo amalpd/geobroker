@@ -22,6 +22,13 @@ public class BrokerForwardPublishPayload extends AbstractPayload {
 		this.subscriberClientIdentifier = "empty";
 	}
 
+	public BrokerForwardPublishPayload(PUBLISHPayload publishPayload, String subscriberClientIdentifier, Location publisherLocation){
+		super();
+		this.publishPayload = publishPayload;
+		this.publisherLocation = publisherLocation;
+		this.subscriberClientIdentifier = subscriberClientIdentifier;
+	}
+
 	public BrokerForwardPublishPayload(PUBLISHPayload publishPayload, String subscriberClientIdentifier) {
 		super();
 		this.publishPayload = publishPayload;

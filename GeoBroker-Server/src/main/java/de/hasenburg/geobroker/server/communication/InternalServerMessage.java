@@ -1,12 +1,13 @@
 package de.hasenburg.geobroker.server.communication;
 
-import de.hasenburg.geobroker.commons.model.JSONable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import de.hasenburg.geobroker.commons.model.message.ControlPacketType;
 import de.hasenburg.geobroker.commons.Utility;
+import de.hasenburg.geobroker.commons.model.message.KryoSerializer;
 import de.hasenburg.geobroker.commons.model.message.payloads.AbstractPayload;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 import java.util.Objects;
@@ -19,6 +20,7 @@ public class InternalServerMessage {
 	private String clientIdentifier;
 	private ControlPacketType controlPacketType;
 	private AbstractPayload payload;
+	public static KryoSerializer kryo = new KryoSerializer();
 
 	/**
 	 * Optional is empty when
@@ -42,8 +44,9 @@ public class InternalServerMessage {
 		try {
 			message.clientIdentifier = msg.popString();
 			message.controlPacketType = ControlPacketType.valueOf(msg.popString());
-			String s = msg.pop().getString(ZMQ.CHARSET);
-			message.payload = Utility.buildPayloadFromString(s, message.controlPacketType);
+			byte[] arr = msg.pop().getData();
+			Input input = new Input(arr);
+			message.payload = Utility.buildPayloadFromKryo(input, message.controlPacketType, kryo);
 		} catch (Exception e) {
 			logger.warn("Cannot parse message, due to exception, discarding it", e);
 			message = null;
@@ -64,7 +67,9 @@ public class InternalServerMessage {
 	}
 
 	public ZMsg getZMsg() {
-		return ZMsg.newStringMsg(clientIdentifier, controlPacketType.name(), JSONable.toJSON(payload));
+		Output output = new Output(1024, -1);
+		kryo.write(output, payload);
+		return ZMsg.newStringMsg(clientIdentifier, controlPacketType.name()).addLast(output.toBytes());
 	}
 
 	/*****************************************************************

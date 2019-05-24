@@ -34,7 +34,7 @@ public class Geofence implements JSONable {
 	}
 
 	@JsonCreator
-	private Geofence(@JsonProperty("WKT") String wkt) throws ParseException {
+	public Geofence(@JsonProperty("WKT") String wkt) throws ParseException {
 		WKTReader reader = (WKTReader) GEO.getFormats().getWktReader();
 		this.shape = reader.parse(wkt);
 		this.boundingBox = this.shape.getBoundingBox();
