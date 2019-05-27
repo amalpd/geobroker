@@ -1,16 +1,11 @@
 package de.hasenburg.geobroker.client.communication;
 
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.KryoObjectInput;
-import com.esotericsoftware.kryo.io.Output;
-import de.hasenburg.geobroker.commons.model.JSONable;
 import de.hasenburg.geobroker.commons.model.message.ControlPacketType;
 import de.hasenburg.geobroker.commons.Utility;
-import de.hasenburg.geobroker.commons.model.message.KryoSerializer;
+import de.hasenburg.geobroker.commons.model.KryoSerializer;
 import de.hasenburg.geobroker.commons.model.message.payloads.AbstractPayload;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 import java.util.Objects;
@@ -22,7 +17,6 @@ public class InternalClientMessage {
 
 	private ControlPacketType controlPacketType;
 	private AbstractPayload payload;
-	private static KryoSerializer kryo = new KryoSerializer();
 
 	/**
 	 * Optional is empty when
@@ -30,7 +24,7 @@ public class InternalClientMessage {
 	 * 	- Payload incompatible to control packet type
 	 * 	- Payload misses fields
 	 */
-	public static Optional<InternalClientMessage> buildMessage(ZMsg msg) {
+	public static Optional<InternalClientMessage> buildMessage(ZMsg msg, KryoSerializer kryo) {
 		if (msg == null) {
 			// happens when queue is empty
 			return Optional.empty();
@@ -46,8 +40,7 @@ public class InternalClientMessage {
 		try {
 			message.controlPacketType = ControlPacketType.valueOf(msg.popString());
 			byte[] arr = msg.pop().getData();
-			Input input = new Input(arr);
-			message.payload = Utility.buildPayloadFromKryo(input, message.controlPacketType, kryo);
+			message.payload = kryo.read(arr, message.controlPacketType);
 		} catch (Exception e) {
 			logger.warn("Cannot parse message, due to exception, discarding it", e);
 			message = null;
@@ -65,10 +58,9 @@ public class InternalClientMessage {
 		this.payload = payload;
 	}
 
-	public ZMsg getZMsg() {
-		Output out = new Output(1024, -1);
-		kryo.write(out, payload);
-		return ZMsg.newStringMsg(controlPacketType.name()).addLast(out.toBytes());
+	public ZMsg getZMsg(KryoSerializer kryo) {
+		byte[] arr = kryo.write(payload);
+		return ZMsg.newStringMsg(controlPacketType.name()).addLast(arr);
 	}
 
 	/*****************************************************************

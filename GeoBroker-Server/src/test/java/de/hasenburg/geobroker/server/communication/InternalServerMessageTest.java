@@ -1,5 +1,6 @@
 package de.hasenburg.geobroker.server.communication;
 
+import de.hasenburg.geobroker.commons.model.KryoSerializer;
 import de.hasenburg.geobroker.commons.model.message.ControlPacketType;
 import de.hasenburg.geobroker.commons.model.message.Topic;
 import de.hasenburg.geobroker.commons.model.message.payloads.BrokerForwardPublishPayload;
@@ -25,10 +26,10 @@ public class InternalServerMessageTest {
 
         InternalServerMessage valid = new InternalServerMessage("Client", ControlPacketType.BrokerForwardPublish, bfpp);
 
-        ZMsg validZMsg = valid.getZMsg();
+        ZMsg validZMsg = valid.getZMsg(new KryoSerializer());
         logger.info(validZMsg);
 
-        assertEquals(valid, InternalServerMessage.buildMessage(validZMsg).get());
+        assertEquals(valid, InternalServerMessage.buildMessage(validZMsg, new KryoSerializer()).get());
     }
 
 }

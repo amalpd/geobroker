@@ -30,7 +30,7 @@ public class Location implements JSONable {
 		this.point = point;
 	}
 
-	private Location(boolean undefined) {
+	public Location(boolean undefined) {
 		this.undefined = undefined;
 		this.point = null;
 	}

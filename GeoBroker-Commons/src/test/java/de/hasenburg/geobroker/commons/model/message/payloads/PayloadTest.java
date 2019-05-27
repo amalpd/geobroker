@@ -1,12 +1,10 @@
 package de.hasenburg.geobroker.commons.model.message.payloads;
 
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 import de.hasenburg.geobroker.commons.Utility;
 import de.hasenburg.geobroker.commons.exceptions.CommunicatorException;
 import de.hasenburg.geobroker.commons.model.JSONable;
 import de.hasenburg.geobroker.commons.model.message.ControlPacketType;
-import de.hasenburg.geobroker.commons.model.message.KryoSerializer;
+import de.hasenburg.geobroker.commons.model.KryoSerializer;
 import de.hasenburg.geobroker.commons.model.message.Topic;
 import de.hasenburg.geobroker.commons.model.spatial.Geofence;
 import de.hasenburg.geobroker.commons.model.spatial.Location;
@@ -95,12 +93,11 @@ public class PayloadTest {
 	public void testSUBSCRIBEPayload() throws CommunicatorException{
 		SUBSCRIBEPayload payload = new SUBSCRIBEPayload(new Topic("data"), Geofence.circle(Location.random(), 1));
 		KryoSerializer kryo = new KryoSerializer();
-		Output out = new Output(1024, -1);
-		kryo.write(out, payload);
-		ZMsg msg = ZMsg.newStringMsg().addLast(out.toBytes());
-
-		Input inp = new Input(msg.pop().getData());
-		AbstractPayload payload2 = Utility.buildPayloadFromKryo(inp, ControlPacketType.SUBSCRIBE, kryo);
+		kryo.write(payload);
+		ZMsg message = ZMsg.newStringMsg("bhashta").addLast(kryo.write(payload));
+		String bhashta = message.pop().getString(ZMQ.CHARSET);
+		byte[] arr = message.pop().getData();
+		AbstractPayload payload2 = kryo.read(arr, ControlPacketType.SUBSCRIBE);
 		assertEquals(payload, payload2.getSUBSCRIBEPayload().get());
 	}
 }

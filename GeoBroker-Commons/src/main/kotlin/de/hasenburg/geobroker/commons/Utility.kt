@@ -2,11 +2,11 @@
 
 package de.hasenburg.geobroker.commons
 
-import com.esotericsoftware.kryo.io.Input
+import com.esotericsoftware.kryo.io.Output
 import de.hasenburg.geobroker.commons.exceptions.CommunicatorException
 import de.hasenburg.geobroker.commons.model.JSONable
 import de.hasenburg.geobroker.commons.model.message.ControlPacketType
-import de.hasenburg.geobroker.commons.model.message.KryoSerializer
+import de.hasenburg.geobroker.commons.model.KryoSerializer
 import de.hasenburg.geobroker.commons.model.message.payloads.*
 import me.atrox.haikunator.Haikunator
 import org.apache.logging.log4j.Level
@@ -224,102 +224,102 @@ fun buildPayloadFromString(s: String, controlPacketType: ControlPacketType): Abs
     throw CommunicatorException("Some of the payloads fields that may not be null are null")
 }
 
-@Throws(CommunicatorException::class)
-fun buildPayloadFromKryo(input: Input, controlPacketType: ControlPacketType, kryo: KryoSerializer): AbstractPayload {
+/*@Throws(CommunicatorException::class)
+fun buildPayloadFromKryo(controlPacketType: ControlPacketType, kryo: KryoSerializer, arr: ByteArray): AbstractPayload {
 
     when (controlPacketType) {
         ControlPacketType.CONNACK -> {
-            val Payload = kryo.read(input) as? CONNACKPayload
+            val Payload = kryo.read(arr) as? CONNACKPayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
         }
         ControlPacketType.CONNECT -> {
-            val Payload = kryo.read(input) as? CONNECTPayload
+            val Payload = kryo.read(arr) as? CONNECTPayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
         }
         ControlPacketType.DISCONNECT -> {
-            val Payload = kryo.read(input) as? DISCONNECTPayload
+            val Payload = kryo.read(arr) as? DISCONNECTPayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
         }
         ControlPacketType.PINGREQ -> {
-            val Payload = kryo.read(input) as? PINGREQPayload
+            val Payload = kryo.read(arr) as? PINGREQPayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
         }
         ControlPacketType.PINGRESP -> {
-            val Payload = kryo.read(input) as? PINGRESPPayload
+            val Payload = kryo.read(arr) as? PINGRESPPayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
         }
         ControlPacketType.PUBACK -> {
-            val Payload = kryo.read(input) as? PUBACKPayload
+            val Payload = kryo.read(arr) as? PUBACKPayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
         }
         ControlPacketType.PUBLISH -> {
-            val Payload = kryo.read(input) as? PUBLISHPayload
+            val Payload = kryo.read(arr) as? PUBLISHPayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
         }
         ControlPacketType.SUBACK -> {
-            val Payload = kryo.read(input) as? SUBACKPayload
+            val Payload = kryo.read(arr) as? SUBACKPayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
         }
         ControlPacketType.SUBSCRIBE -> {
-            val Payload = kryo.read(input) as? SUBSCRIBEPayload
+            val Payload = kryo.read(arr) as? SUBSCRIBEPayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
         }
         ControlPacketType.UNSUBACK -> {
-            val Payload = kryo.read(input) as? UNSUBACKPayload
+            val Payload = kryo.read(arr) as? UNSUBACKPayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
         }
         ControlPacketType.UNSUBSCRIBE -> {
-            val Payload = kryo.read(input) as? UNSUBSCRIBEPayload
+            val Payload = kryo.read(arr) as? UNSUBSCRIBEPayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
         }
         ControlPacketType.BrokerForwardDisconnect -> {
-            val Payload = kryo.read(input) as? BrokerForwardDisconnectPayload
+            val Payload = kryo.read(arr) as? BrokerForwardDisconnectPayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
         }
         ControlPacketType.BrokerForwardPingreq -> {
-            val Payload = kryo.read(input) as? BrokerForwardPingreqPayload
+            val Payload = kryo.read(arr) as? BrokerForwardPingreqPayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
         }
         ControlPacketType.BrokerForwardPublish -> {
-            val Payload = kryo.read(input) as? BrokerForwardPublishPayload
+            val Payload = kryo.read(arr) as? BrokerForwardPublishPayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
         }
         ControlPacketType.BrokerForwardSubscribe -> {
-            val Payload = kryo.read(input) as? BrokerForwardSubscribePayload
+            val Payload = kryo.read(arr) as? BrokerForwardSubscribePayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
         }
         ControlPacketType.BrokerForwardUnsubscribe -> {
-            val Payload = kryo.read(input) as? BrokerForwardUnsubscribePayload
+            val Payload = kryo.read(arr) as? BrokerForwardUnsubscribePayload
             if (Payload != null && !Payload.nullField()) {
                 return Payload
             }
@@ -328,7 +328,7 @@ fun buildPayloadFromKryo(input: Input, controlPacketType: ControlPacketType, kry
     }
 
     throw CommunicatorException("Some of the payloads fields that may not be null are null")
-}
+}*/
 
 fun generateClientOrderBackendString(identity: String): String {
     return "inproc://$identity"
