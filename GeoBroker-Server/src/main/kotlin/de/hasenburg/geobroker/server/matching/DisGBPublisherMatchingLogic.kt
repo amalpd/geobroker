@@ -254,7 +254,7 @@ class DisGBAtPublisherMatchingLogic constructor(private val clientDirectory: Cli
                     val otherBrokerId: String? = brokerAreaManager.getOtherBrokerContainingLocation(subscriber.location)
                             ?.brokerId
                     otherBrokerId.let {
-                        logger.debug("""|Client ${message.clientIdentifier} is connected to broker ${otherBrokerId},
+                        logger.debug("""|Client ${subscriber.clientIdentifier} is connected to broker ${otherBrokerId},
                                         |thus forwarding the published message (topic = ${payload.topic} to it""".trimMargin())
                         // send message to BrokerCommunicator who takes care of the rest
                         ZMQProcess_BrokerCommunicator.generatePULLSocketMessage(otherBrokerId,

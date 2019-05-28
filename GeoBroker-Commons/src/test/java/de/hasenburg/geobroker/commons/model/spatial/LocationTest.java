@@ -1,6 +1,7 @@
 package de.hasenburg.geobroker.commons.model.spatial;
 
 import de.hasenburg.geobroker.commons.model.JSONable;
+import de.hasenburg.geobroker.commons.model.KryoSerializer;
 import de.hasenburg.geobroker.commons.model.spatial.Location;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,6 +44,18 @@ public class LocationTest {
 			assertEquals(location, JSONable.fromJSON(JSONable.toJSON(location), Location.class).orElse(null));
 		}
 		logger.info("Created and read {} JSONs in {}ms", N, System.currentTimeMillis() - time);
+	}
+
+	@Test
+	public void toAndFromByte() {
+		KryoSerializer kryo = new KryoSerializer();
+		// point set
+		byte[] bytes = kryo.write(location);
+		assertEquals(location, kryo.read(bytes, Location.class));
+
+		// undefined
+		bytes = kryo.write(Location.undefined());
+		assertEquals(Location.undefined(), kryo.read(bytes, Location.class));
 	}
 
 	@Test

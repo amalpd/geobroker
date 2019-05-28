@@ -13,6 +13,7 @@ import de.hasenburg.geobroker.commons.model.spatial.Geofence;
 import de.hasenburg.geobroker.commons.model.spatial.Location;
 
 import javax.naming.ldap.Control;
+import java.util.Optional;
 
 
 public class KryoSerializer {
@@ -41,18 +42,19 @@ public class KryoSerializer {
 			@Override
 			public void write(Kryo kryo, Output output, Location o) {
 				if (o.isUndefined()){
-					kryo.writeObjectOrNull(output, 1000, double.class);
-					kryo.writeObjectOrNull(output, 1000, double.class);
+					kryo.writeObjectOrNull(output, -1000.0, double.class);
+					kryo.writeObjectOrNull(output, -1000.0, double.class);
+				} else {
+					kryo.writeObjectOrNull(output, o.getLat(), double.class);
+					kryo.writeObjectOrNull(output, o.getLon(), double.class);
 				}
-				kryo.writeObjectOrNull(output, o.getLat(), double.class);
-				kryo.writeObjectOrNull(output, o.getLon(), double.class);
 			}
 
 			@Override
 			public Location read(Kryo kryo, Input input, Class<Location> aClass) {
 				double lat = kryo.readObjectOrNull(input, double.class);
 				double lon = kryo.readObjectOrNull(input, double.class);
-				if (lat == 1000 && lon == 1000) {
+				if (lat == -1000.0 && lon == -1000.0) {
 					return new Location(true);
 				}
 				else
@@ -301,65 +303,71 @@ public class KryoSerializer {
 	}
 
 	public byte[] write(Object o) {
-		if (o instanceof CONNACKPayload) {
-			kryo.writeObjectOrNull(output, o, CONNACKPayload.class);
-		}
-		else if (o instanceof CONNECTPayload) {
-			kryo.writeObjectOrNull(output, o, CONNECTPayload.class);
-		}
-		else if (o instanceof DISCONNECTPayload) {
-			kryo.writeObjectOrNull(output, o, DISCONNECTPayload.class);
-		}
-		else if (o instanceof PINGREQPayload) {
-			kryo.writeObjectOrNull(output, o, PINGREQPayload.class);
-		}
-		else if (o instanceof PINGRESPPayload) {
-			kryo.writeObjectOrNull(output, o, PINGRESPPayload.class);
-		}
-		else if (o instanceof PUBACKPayload) {
-			kryo.writeObjectOrNull(output, o, PUBACKPayload.class);
-		}
-		else if (o instanceof PUBLISHPayload) {
-			kryo.writeObjectOrNull(output, o, PUBLISHPayload.class);
-		}
-		else if (o instanceof SUBACKPayload) {
-			kryo.writeObjectOrNull(output, o, SUBACKPayload.class);
-		}
-		else if (o instanceof SUBSCRIBEPayload) {
-			kryo.writeObjectOrNull(output, o, SUBSCRIBEPayload.class);
-		}
-		else if (o instanceof UNSUBACKPayload) {
-			kryo.writeObjectOrNull(output, o, UNSUBACKPayload.class);
-		}
-		else if (o instanceof UNSUBSCRIBEPayload) {
-			kryo.writeObjectOrNull(output, o, UNSUBSCRIBEPayload.class);
-		}
-		else if (o instanceof BrokerForwardDisconnectPayload) {
-			kryo.writeObjectOrNull(output, o, BrokerForwardDisconnectPayload.class);
-		}
-		else if (o instanceof BrokerForwardPingreqPayload) {
-			kryo.writeObjectOrNull(output, o, BrokerForwardPingreqPayload.class);
-		}
-		else if (o instanceof BrokerForwardPublishPayload) {
-			kryo.writeObjectOrNull(output, o, BrokerForwardPublishPayload.class);
-		}
-		else if (o instanceof BrokerForwardSubscribePayload) {
-			kryo.writeObjectOrNull(output, o, BrokerForwardSubscribePayload.class);
-		}
-		else if (o instanceof BrokerForwardUnsubscribePayload) {
-			kryo.writeObjectOrNull(output, o, BrokerForwardUnsubscribePayload.class);
-		}
-		else{
-			return null;
-		}
+		kryo.writeObjectOrNull(output, o, o.getClass());
+//		if (o instanceof CONNACKPayload) {
+//			kryo.writeObjectOrNull(output, o, CONNACKPayload.class);
+//		}
+//		else if (o instanceof CONNECTPayload) {
+//			kryo.writeObjectOrNull(output, o, CONNECTPayload.class);
+//		}
+//		else if (o instanceof DISCONNECTPayload) {
+//			kryo.writeObjectOrNull(output, o, DISCONNECTPayload.class);
+//		}
+//		else if (o instanceof PINGREQPayload) {
+//			kryo.writeObjectOrNull(output, o, PINGREQPayload.class);
+//		}
+//		else if (o instanceof PINGRESPPayload) {
+//			kryo.writeObjectOrNull(output, o, PINGRESPPayload.class);
+//		}
+//		else if (o instanceof PUBACKPayload) {
+//			kryo.writeObjectOrNull(output, o, PUBACKPayload.class);
+//		}
+//		else if (o instanceof PUBLISHPayload) {
+//			kryo.writeObjectOrNull(output, o, PUBLISHPayload.class);
+//		}
+//		else if (o instanceof SUBACKPayload) {
+//			kryo.writeObjectOrNull(output, o, SUBACKPayload.class);
+//		}
+//		else if (o instanceof SUBSCRIBEPayload) {
+//			kryo.writeObjectOrNull(output, o, SUBSCRIBEPayload.class);
+//		}
+//		else if (o instanceof UNSUBACKPayload) {
+//			kryo.writeObjectOrNull(output, o, UNSUBACKPayload.class);
+//		}
+//		else if (o instanceof UNSUBSCRIBEPayload) {
+//			kryo.writeObjectOrNull(output, o, UNSUBSCRIBEPayload.class);
+//		}
+//		else if (o instanceof BrokerForwardDisconnectPayload) {
+//			kryo.writeObjectOrNull(output, o, BrokerForwardDisconnectPayload.class);
+//		}
+//		else if (o instanceof BrokerForwardPingreqPayload) {
+//			kryo.writeObjectOrNull(output, o, BrokerForwardPingreqPayload.class);
+//		}
+//		else if (o instanceof BrokerForwardPublishPayload) {
+//			kryo.writeObjectOrNull(output, o, BrokerForwardPublishPayload.class);
+//		}
+//		else if (o instanceof BrokerForwardSubscribePayload) {
+//			kryo.writeObjectOrNull(output, o, BrokerForwardSubscribePayload.class);
+//		}
+//		else if (o instanceof BrokerForwardUnsubscribePayload) {
+//			kryo.writeObjectOrNull(output, o, BrokerForwardUnsubscribePayload.class);
+//		}
+//		else{
+//			return null;
+//		}
 		byte[] arr = output.toBytes();
 		output.clear();
 		return arr;
 	}
 
+	public <T> T read(byte[] bytes, Class<T> targetClass) {
+		input.setBuffer(bytes);
+		return kryo.readObjectOrNull(input, targetClass);
+	}
+
 	public AbstractPayload read(byte[] arr, ControlPacketType controlPacketType) {
 		input.setBuffer(arr);
-		Object o = new Object();
+		AbstractPayload o;
 		if(controlPacketType == ControlPacketType.CONNACK){
 			o = kryo.readObjectOrNull(input, CONNACKPayload.class);
 		}
@@ -411,7 +419,7 @@ public class KryoSerializer {
 		else{
 			return null;
 		}
-		return (AbstractPayload) o;
+		return o;
 	}
 }
 
