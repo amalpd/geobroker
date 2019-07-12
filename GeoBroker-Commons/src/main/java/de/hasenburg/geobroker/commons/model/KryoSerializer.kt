@@ -228,11 +228,15 @@ class KryoSerializer {
         kryo.register(PUBACKPayload::class.java, object : Serializer<PUBACKPayload>() {
             override fun write(kryo: Kryo, output: Output, o: PUBACKPayload) {
                 kryo.writeObjectOrNull(output, o.reasonCode, ReasonCode::class.java)
+                kryo.writeObjectOrNull(output, o.numberOfLocalSubscribers, Int::class.javaPrimitiveType)
+                kryo.writeObjectOrNull(output, o.numberOfAffectedBrokers, Int::class.javaPrimitiveType)
             }
 
             override fun read(kryo: Kryo, input: Input, aClass: Class<PUBACKPayload>): PUBACKPayload? {
                 val reasonCode = kryo.readObjectOrNull(input, ReasonCode::class.java) ?: return null
-                return PUBACKPayload(reasonCode)
+                val numberOfLocalSubscribers = kryo.readObjectOrNull(input, Int::class.javaPrimitiveType) ?: return null
+                val numberOfAffectedBrokers = kryo.readObjectOrNull(input, Int::class.javaPrimitiveType) ?: return null
+                return PUBACKPayload(reasonCode, numberOfLocalSubscribers, numberOfAffectedBrokers)
             }
         })
         kryo.register(PUBLISHPayload::class.java, object : Serializer<PUBLISHPayload>() {

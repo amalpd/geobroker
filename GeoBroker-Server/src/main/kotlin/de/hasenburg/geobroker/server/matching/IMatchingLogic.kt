@@ -93,8 +93,10 @@ fun subscribeAtLocalBroker(clientIdentifier: String, clientDirectory: ClientDire
                            topicAndGeofenceMapper: TopicAndGeofenceMapper, topic: Topic, geofence: Geofence,
                            logger: Logger, kryo: KryoSerializer): ReasonCode {
 
-    val subscribed: ImmutablePair<ImmutablePair<String, Int>, Geofence>? =
-            clientDirectory.checkIfSubscribed(clientIdentifier, topic, geofence)
+    val subscribed: ImmutablePair<ImmutablePair<String, Int>, Geofence>? = clientDirectory.checkIfSubscribed(
+            clientIdentifier,
+            topic,
+            geofence)
 
     // if already subscribed -> remove subscription id from now unrelated geofence parts
     subscribed?.let { topicAndGeofenceMapper.removeSubscriptionId(subscribed.left, topic, subscribed.right) }
@@ -136,20 +138,21 @@ fun unsubscribeAtLocalBroker(clientIdentifier: String, clientDirectory: ClientDi
  */
 fun publishMessageToLocalClients(publisherLocation: Location, publishPayload: PUBLISHPayload,
                                  clientDirectory: ClientDirectory, topicAndGeofenceMapper: TopicAndGeofenceMapper,
-                                 clients: Socket, logger: Logger, kryo: KryoSerializer): ReasonCode {
+                                 clients: Socket, logger: Logger, kryo: KryoSerializer): Pair<ReasonCode, Int> {
 
     logger.debug("Publishing topic {} to all subscribers", publishPayload.topic)
 
     // get subscriptions that have a geofence containing the publisher location
-    val subscriptionIdResults =
-            topicAndGeofenceMapper.getSubscriptionIds(publishPayload.topic, publisherLocation, clientDirectory)
+    val subscriptionIdResults = topicAndGeofenceMapper.getSubscriptionIds(publishPayload.topic,
+            publisherLocation,
+            clientDirectory)
 
 
     // only keep subscription if subscriber location is insider message geofence
     val subscriptionIds = subscriptionIdResults.filter { subId ->
         publishPayload.geofence.contains(clientDirectory.getClientLocation(subId.left)!!)
     }
-
+    var c = 0
     // publish message to remaining subscribers
     for (subscriptionId in subscriptionIds) {
         val subscriberClientIdentifier = subscriptionId.left
@@ -157,13 +160,14 @@ fun publishMessageToLocalClients(publisherLocation: Location, publishPayload: PU
         val toPublish = InternalServerMessage(subscriberClientIdentifier, ControlPacketType.PUBLISH, publishPayload)
         logger.trace("Publishing $toPublish")
         toPublish.getZMsg(kryo).send(clients)
+        c++
     }
 
     if (subscriptionIds.isEmpty()) {
         logger.debug("No subscriber exists.")
-        return ReasonCode.NoMatchingSubscribers
+        return Pair(ReasonCode.NoMatchingSubscribers, 0)
     } else {
-        return ReasonCode.Success
+        return Pair(ReasonCode.Success, c)
     }
 
 }

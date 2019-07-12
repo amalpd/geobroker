@@ -25,8 +25,11 @@ class SingleGeoBrokerMatchingLogic(private val clientDirectory: ClientDirectory,
                                 kryo: KryoSerializer) {
         val payload = message.payload.getCONNECTPayload() ?: return
 
-        val response =
-                connectClientAtLocalBroker(message.clientIdentifier, payload.location, clientDirectory, logger, kryo)
+        val response = connectClientAtLocalBroker(message.clientIdentifier,
+                payload.location,
+                clientDirectory,
+                logger,
+                kryo)
 
         logger.trace("Sending response $response")
         response.getZMsg(kryo).send(clients)
@@ -56,8 +59,9 @@ class SingleGeoBrokerMatchingLogic(private val clientDirectory: ClientDirectory,
                 logger,
                 kryo)
 
-        val response =
-                InternalServerMessage(message.clientIdentifier, ControlPacketType.PINGRESP, PINGRESPPayload(reasonCode))
+        val response = InternalServerMessage(message.clientIdentifier,
+                ControlPacketType.PINGRESP,
+                PINGRESPPayload(reasonCode))
 
         logger.trace("Sending response $response")
         response.getZMsg(kryo).send(clients)
@@ -75,8 +79,9 @@ class SingleGeoBrokerMatchingLogic(private val clientDirectory: ClientDirectory,
                 logger,
                 kryo)
 
-        val response =
-                InternalServerMessage(message.clientIdentifier, ControlPacketType.SUBACK, SUBACKPayload(reasonCode))
+        val response = InternalServerMessage(message.clientIdentifier,
+                ControlPacketType.SUBACK,
+                SUBACKPayload(reasonCode))
 
         logger.trace("Sending response $response")
         response.getZMsg(kryo).send(clients)
@@ -93,8 +98,9 @@ class SingleGeoBrokerMatchingLogic(private val clientDirectory: ClientDirectory,
                 logger,
                 kryo)
 
-        val response =
-                InternalServerMessage(message.clientIdentifier, ControlPacketType.UNSUBACK, UNSUBACKPayload(reasonCode))
+        val response = InternalServerMessage(message.clientIdentifier,
+                ControlPacketType.UNSUBACK,
+                UNSUBACKPayload(reasonCode))
 
         logger.trace("Sending response $response")
         response.getZMsg(kryo).send(clients)
@@ -103,6 +109,7 @@ class SingleGeoBrokerMatchingLogic(private val clientDirectory: ClientDirectory,
     override fun processPUBLISH(message: InternalServerMessage, clients: Socket, brokers: Socket,
                                 kryo: KryoSerializer) {
         val reasonCode: ReasonCode
+        var numberOfSubscribers = 0
         val payload = message.payload.getPUBLISHPayload() ?: return
         val publisherLocation = clientDirectory.getClientLocation(message.clientIdentifier)
 
@@ -110,19 +117,22 @@ class SingleGeoBrokerMatchingLogic(private val clientDirectory: ClientDirectory,
             logger.debug("Client {} is not connected", message.clientIdentifier)
             reasonCode = ReasonCode.NotConnected
         } else {
-            reasonCode = publishMessageToLocalClients(publisherLocation,
+            val dummyReasonSubscribers = publishMessageToLocalClients(publisherLocation,
                     payload,
                     clientDirectory,
                     topicAndGeofenceMapper,
                     clients,
                     logger,
                     kryo)
+            reasonCode = dummyReasonSubscribers.first
+            numberOfSubscribers = dummyReasonSubscribers.second
         }
 
         // send response to publisher
         logger.trace("Sending response with reason code $reasonCode")
-        val response =
-                InternalServerMessage(message.clientIdentifier, ControlPacketType.PUBACK, PUBACKPayload(reasonCode))
+        val response = InternalServerMessage(message.clientIdentifier,
+                ControlPacketType.PUBACK,
+                PUBACKPayload(reasonCode, numberOfSubscribers, 1))
         response.getZMsg(kryo).send(clients)
     }
 
@@ -157,3 +167,4 @@ class SingleGeoBrokerMatchingLogic(private val clientDirectory: ClientDirectory,
     }
 
 }
+

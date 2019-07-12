@@ -37,8 +37,11 @@ class DisGBAtPublisherMatchingLogic constructor(private val clientDirectory: Cli
             logger.warn("Client with an undefined location connected to broker.")
         }
 
-        val response =
-                connectClientAtLocalBroker(message.clientIdentifier, payload.location, clientDirectory, logger, kryo)
+        val response = connectClientAtLocalBroker(message.clientIdentifier,
+                payload.location,
+                clientDirectory,
+                logger,
+                kryo)
 
         logger.trace("Sending response $response")
         response.getZMsg(kryo).send(clients)
@@ -99,8 +102,9 @@ class DisGBAtPublisherMatchingLogic constructor(private val clientDirectory: Cli
          * Response
          ****************************************************************/
 
-        val response =
-                InternalServerMessage(message.clientIdentifier, ControlPacketType.PINGRESP, PINGRESPPayload(reasonCode))
+        val response = InternalServerMessage(message.clientIdentifier,
+                ControlPacketType.PINGRESP,
+                PINGRESPPayload(reasonCode))
         logger.trace("Sending response $response")
         response.getZMsg(kryo).send(clients)
     }
@@ -162,8 +166,8 @@ class DisGBAtPublisherMatchingLogic constructor(private val clientDirectory: Cli
             }
 
             // update broker affection -> returns now not anymore affected brokers
-            val notAnymoreAffectedOtherBrokers =
-                    subscriptionAffection.updateAffections(subscriptionId, otherAffectedBrokers)
+            val notAnymoreAffectedOtherBrokers = subscriptionAffection.updateAffections(subscriptionId,
+                    otherAffectedBrokers)
 
             // unsubscribe these now not anymore affected brokers
             for (notAnymoreAffectedOtherBroker in notAnymoreAffectedOtherBrokers) {
@@ -183,8 +187,9 @@ class DisGBAtPublisherMatchingLogic constructor(private val clientDirectory: Cli
          * Response
          ****************************************************************/
 
-        val response =
-                InternalServerMessage(message.clientIdentifier, ControlPacketType.SUBACK, SUBACKPayload(reasonCode))
+        val response = InternalServerMessage(message.clientIdentifier,
+                ControlPacketType.SUBACK,
+                SUBACKPayload(reasonCode))
         logger.trace("Sending response $response")
         response.getZMsg(kryo).send(clients)
     }
@@ -231,8 +236,9 @@ class DisGBAtPublisherMatchingLogic constructor(private val clientDirectory: Cli
          * Response
          ****************************************************************/
 
-        val response =
-                InternalServerMessage(message.clientIdentifier, ControlPacketType.UNSUBACK, UNSUBACKPayload(reasonCode))
+        val response = InternalServerMessage(message.clientIdentifier,
+                ControlPacketType.UNSUBACK,
+                UNSUBACKPayload(reasonCode))
         logger.trace("Sending response $response")
         response.getZMsg(kryo).send(clients)
 
@@ -242,15 +248,19 @@ class DisGBAtPublisherMatchingLogic constructor(private val clientDirectory: Cli
                                 kryo: KryoSerializer) {
         val reasonCode: ReasonCode
         val payload = message.payload.getPUBLISHPayload() ?: return
+        var numberOfAffectedBrokers = 0
+        var numberOfLocalSubscribers = 0
         val publisherLocation = clientDirectory.getClientLocation(message.clientIdentifier)
 
         if (publisherLocation == null) { // null if client is not connected
             logger.debug("Client {} is not connected", message.clientIdentifier)
             reasonCode = ReasonCode.NotConnected
         } else {
+            numberOfAffectedBrokers = 1
             // get subscriptions that have a geofence containing the publisher location
-            val subscriptionIdResults =
-                    topicAndGeofenceMapper.getSubscriptionIds(payload.topic, publisherLocation, clientDirectory)
+            val subscriptionIdResults = topicAndGeofenceMapper.getSubscriptionIds(payload.topic,
+                    publisherLocation,
+                    clientDirectory)
 
             // only keep subscription if subscriber location is insider message geofence
             val subscriptionIds = subscriptionIdResults.filter { subId ->
@@ -262,6 +272,7 @@ class DisGBAtPublisherMatchingLogic constructor(private val clientDirectory: Cli
             // publish message to remaining subscribers
             for (subscriptionId in subscriptionIds) {
                 val subscriber = clientDirectory.getClient(subscriptionId.left)
+                numberOfLocalSubscribers ++
 
                 when {
                     subscriber == null -> // in very rare cases another thread removed it again already, so do nothing
@@ -269,8 +280,8 @@ class DisGBAtPublisherMatchingLogic constructor(private val clientDirectory: Cli
                     subscriber.remote -> {
                         logger.debug("Client {} is a remote subscriber", subscriber.clientIdentifier)
                         // remote client -> must be send to his broker
-                        val otherBrokerId: String? =
-                                brokerAreaManager.getOtherBrokerContainingLocation(subscriber.location)?.brokerId
+                        val otherBrokerId: String? = brokerAreaManager.getOtherBrokerContainingLocation(subscriber.location)
+                                ?.brokerId
                         if (otherBrokerId != null) {
                             logger.debug("""|Client ${subscriber.clientIdentifier} is connected to broker $otherBrokerId,
                                             |thus forwarding the published message (topic = ${payload.topic}) to it""".trimMargin())
@@ -280,8 +291,9 @@ class DisGBAtPublisherMatchingLogic constructor(private val clientDirectory: Cli
                     else -> {
                         // local client -> send directly
                         logger.debug("Client {} is a local subscriber", subscriber.clientIdentifier)
-                        val toPublish =
-                                InternalServerMessage(subscriber.clientIdentifier, ControlPacketType.PUBLISH, payload)
+                        val toPublish = InternalServerMessage(subscriber.clientIdentifier,
+                                ControlPacketType.PUBLISH,
+                                payload)
                         logger.trace("Publishing $toPublish")
                         toPublish.getZMsg(kryo).send(clients)
                     }
@@ -296,6 +308,7 @@ class DisGBAtPublisherMatchingLogic constructor(private val clientDirectory: Cli
                         InternalBrokerMessage(ControlPacketType.BrokerForwardPublish,
                                 BrokerForwardPublishPayload(payload, subscribers)),
                         kryo).send(brokers)
+                numberOfAffectedBrokers++
             }
 
             reasonCode = if (subscriptionIds.isEmpty()) {
@@ -308,8 +321,9 @@ class DisGBAtPublisherMatchingLogic constructor(private val clientDirectory: Cli
 
         // send response to publisher
         logger.trace("Sending response with reason code $reasonCode")
-        val response =
-                InternalServerMessage(message.clientIdentifier, ControlPacketType.PUBACK, PUBACKPayload(reasonCode))
+        val response = InternalServerMessage(message.clientIdentifier,
+                ControlPacketType.PUBACK,
+                PUBACKPayload(reasonCode, numberOfLocalSubscribers, numberOfAffectedBrokers))
         response.getZMsg(kryo).send(clients)
     }
 
@@ -370,8 +384,9 @@ class DisGBAtPublisherMatchingLogic constructor(private val clientDirectory: Cli
                 logger,
                 kryo)
 
-        val response =
-                InternalServerMessage(message.clientIdentifier, ControlPacketType.PINGRESP, PINGRESPPayload(reasonCode))
+        val response = InternalServerMessage(message.clientIdentifier,
+                ControlPacketType.PINGRESP,
+                PINGRESPPayload(reasonCode))
 
         // acknowledge subscribe operation to other broker, he does not expect a particular message so we just reply
         // with the response that we have generated anyways (needs to go via the clients socket as response has to
@@ -483,7 +498,7 @@ class DisGBAtPublisherMatchingLogic constructor(private val clientDirectory: Cli
             }
         }
 
-        val response = InternalServerMessage(otherBrokerId, ControlPacketType.PUBACK, PUBACKPayload(reasonCode))
+        val response = InternalServerMessage(otherBrokerId, ControlPacketType.PUBACK, PUBACKPayload(reasonCode, 1, 2))
 
         // acknowledge publish operation to other broker, he does not expect a particular message so we just reply
         // with the response that we have generated anyways (needs to go via the clients socket as response has to

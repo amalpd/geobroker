@@ -36,8 +36,11 @@ class DisGBAtSubscriberMatchingLogic(private val clientDirectory: ClientDirector
             logger.warn("Client with an undefined location connected to broker.")
         }
 
-        val response =
-                connectClientAtLocalBroker(message.clientIdentifier, payload.location, clientDirectory, logger, kryo)
+        val response = connectClientAtLocalBroker(message.clientIdentifier,
+                payload.location,
+                clientDirectory,
+                logger,
+                kryo)
 
         logger.trace("Sending response $response")
         response.getZMsg(kryo).send(clients)
@@ -71,8 +74,9 @@ class DisGBAtSubscriberMatchingLogic(private val clientDirectory: ClientDirector
                 logger,
                 kryo)
 
-        val response =
-                InternalServerMessage(message.clientIdentifier, ControlPacketType.PINGRESP, PINGRESPPayload(reasonCode))
+        val response = InternalServerMessage(message.clientIdentifier,
+                ControlPacketType.PINGRESP,
+                PINGRESPPayload(reasonCode))
 
         logger.trace("Sending response $response")
         response.getZMsg(kryo).send(clients)
@@ -90,8 +94,9 @@ class DisGBAtSubscriberMatchingLogic(private val clientDirectory: ClientDirector
                 logger,
                 kryo)
 
-        val response =
-                InternalServerMessage(message.clientIdentifier, ControlPacketType.SUBACK, SUBACKPayload(reasonCode))
+        val response = InternalServerMessage(message.clientIdentifier,
+                ControlPacketType.SUBACK,
+                SUBACKPayload(reasonCode))
 
         logger.trace("Sending response $response")
         response.getZMsg(kryo).send(clients)
@@ -108,8 +113,9 @@ class DisGBAtSubscriberMatchingLogic(private val clientDirectory: ClientDirector
                 logger,
                 kryo)
 
-        val response =
-                InternalServerMessage(message.clientIdentifier, ControlPacketType.UNSUBACK, UNSUBACKPayload(reasonCode))
+        val response = InternalServerMessage(message.clientIdentifier,
+                ControlPacketType.UNSUBACK,
+                UNSUBACKPayload(reasonCode))
 
         logger.trace("Sending response $response")
         response.getZMsg(kryo).send(clients)
@@ -118,6 +124,8 @@ class DisGBAtSubscriberMatchingLogic(private val clientDirectory: ClientDirector
     override fun processPUBLISH(message: InternalServerMessage, clients: Socket, brokers: Socket,
                                 kryo: KryoSerializer) {
         val reasonCode: ReasonCode
+        var numberOfSubscribers = 0
+        var numberOfAffectedBrokers = 0
         val payload = message.payload.getPUBLISHPayload() ?: return
         val publisherLocation = clientDirectory.getClientLocation(message.clientIdentifier)
 
@@ -126,6 +134,7 @@ class DisGBAtSubscriberMatchingLogic(private val clientDirectory: ClientDirector
             reasonCode = ReasonCode.NotConnected
         } else {
 
+            numberOfAffectedBrokers = 1
             // find other brokers whose broker area intersects with the message geofence
             val otherBrokers = brokerAreaManager.getOtherBrokersIntersectingWithGeofence(payload.geofence)
             for (otherBroker in otherBrokers) {
@@ -137,20 +146,22 @@ class DisGBAtSubscriberMatchingLogic(private val clientDirectory: ClientDirector
                         InternalBrokerMessage(ControlPacketType.BrokerForwardPublish,
                                 BrokerForwardPublishPayload(payload, publisherLocation)),
                         kryo).send(brokers)
-
+                numberOfAffectedBrokers ++
             }
 
 
             var ourReasonCode = ReasonCode.NoMatchingSubscribers
             // check if own broker area intersects with the message geofence
             if (brokerAreaManager.checkOurAreaForGeofenceIntersection(payload.geofence)) {
-                ourReasonCode = publishMessageToLocalClients(publisherLocation,
+                val dummy = publishMessageToLocalClients(publisherLocation,
                         payload,
                         clientDirectory,
                         topicAndGeofenceMapper,
                         clients,
                         logger,
                         kryo)
+                ourReasonCode = dummy.first
+                numberOfSubscribers = dummy.second
             }
 
             reasonCode = if (otherBrokers.size > 0 && ourReasonCode == ReasonCode.NoMatchingSubscribers) {
@@ -163,8 +174,9 @@ class DisGBAtSubscriberMatchingLogic(private val clientDirectory: ClientDirector
 
         }
 
-        val response =
-                InternalServerMessage(message.clientIdentifier, ControlPacketType.PUBACK, PUBACKPayload(reasonCode))
+        val response = InternalServerMessage(message.clientIdentifier,
+                ControlPacketType.PUBACK,
+                PUBACKPayload(reasonCode, numberOfSubscribers, numberOfAffectedBrokers))
 
         // send response to publisher
         logger.trace("Sending response with reason code $reasonCode")
@@ -212,15 +224,19 @@ class DisGBAtSubscriberMatchingLogic(private val clientDirectory: ClientDirector
                 otherBrokerId,
                 payload.publishPayload.content)
 
-        val reasonCode = publishMessageToLocalClients(payload.publisherLocation,
+        val dummy = publishMessageToLocalClients(payload.publisherLocation,
                 payload.publishPayload,
                 clientDirectory,
                 topicAndGeofenceMapper,
                 clients,
                 logger,
                 kryo)
+        val reasonCode = dummy.first
+        val numberOfSubscribers = dummy.second
 
-        val response = InternalServerMessage(otherBrokerId, ControlPacketType.PUBACK, PUBACKPayload(reasonCode))
+        val response = InternalServerMessage(otherBrokerId,
+                ControlPacketType.PUBACK,
+                PUBACKPayload(reasonCode, numberOfSubscribers, 2))
 
         // acknowledge publish operation to other broker, he does not expect a particular message so we just reply
         // with the response that we have generated anyways (needs to go via the clients socket as response has to
