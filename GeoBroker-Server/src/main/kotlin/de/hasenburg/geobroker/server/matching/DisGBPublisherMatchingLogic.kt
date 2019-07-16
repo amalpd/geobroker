@@ -498,7 +498,7 @@ class DisGBAtPublisherMatchingLogic constructor(private val clientDirectory: Cli
             }
         }
 
-        val response = InternalServerMessage(otherBrokerId, ControlPacketType.PUBACK, PUBACKPayload(reasonCode, 1, 2))
+        val response = InternalServerMessage(otherBrokerId, ControlPacketType.PUBACK, PUBACKPayload(reasonCode))
 
         // acknowledge publish operation to other broker, he does not expect a particular message so we just reply
         // with the response that we have generated anyways (needs to go via the clients socket as response has to

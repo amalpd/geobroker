@@ -153,15 +153,15 @@ class DisGBAtSubscriberMatchingLogic(private val clientDirectory: ClientDirector
             var ourReasonCode = ReasonCode.NoMatchingSubscribers
             // check if own broker area intersects with the message geofence
             if (brokerAreaManager.checkOurAreaForGeofenceIntersection(payload.geofence)) {
-                val dummy = publishMessageToLocalClients(publisherLocation,
+                val reasonAndSubscribers = publishMessageToLocalClients(publisherLocation,
                         payload,
                         clientDirectory,
                         topicAndGeofenceMapper,
                         clients,
                         logger,
                         kryo)
-                ourReasonCode = dummy.first
-                numberOfSubscribers = dummy.second
+                ourReasonCode = reasonAndSubscribers.first
+                numberOfSubscribers = reasonAndSubscribers.second
             }
 
             reasonCode = if (otherBrokers.size > 0 && ourReasonCode == ReasonCode.NoMatchingSubscribers) {
@@ -224,15 +224,15 @@ class DisGBAtSubscriberMatchingLogic(private val clientDirectory: ClientDirector
                 otherBrokerId,
                 payload.publishPayload.content)
 
-        val dummy = publishMessageToLocalClients(payload.publisherLocation,
+        val reasonAndSubscribers = publishMessageToLocalClients(payload.publisherLocation,
                 payload.publishPayload,
                 clientDirectory,
                 topicAndGeofenceMapper,
                 clients,
                 logger,
                 kryo)
-        val reasonCode = dummy.first
-        val numberOfSubscribers = dummy.second
+        val reasonCode = reasonAndSubscribers.first
+        val numberOfSubscribers = reasonAndSubscribers.second
 
         val response = InternalServerMessage(otherBrokerId,
                 ControlPacketType.PUBACK,

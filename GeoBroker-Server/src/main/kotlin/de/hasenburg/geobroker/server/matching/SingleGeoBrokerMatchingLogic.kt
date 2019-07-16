@@ -117,15 +117,15 @@ class SingleGeoBrokerMatchingLogic(private val clientDirectory: ClientDirectory,
             logger.debug("Client {} is not connected", message.clientIdentifier)
             reasonCode = ReasonCode.NotConnected
         } else {
-            val dummyReasonSubscribers = publishMessageToLocalClients(publisherLocation,
+            val reasonAndSubscribers = publishMessageToLocalClients(publisherLocation,
                     payload,
                     clientDirectory,
                     topicAndGeofenceMapper,
                     clients,
                     logger,
                     kryo)
-            reasonCode = dummyReasonSubscribers.first
-            numberOfSubscribers = dummyReasonSubscribers.second
+            reasonCode = reasonAndSubscribers.first
+            numberOfSubscribers = reasonAndSubscribers.second
         }
 
         // send response to publisher
